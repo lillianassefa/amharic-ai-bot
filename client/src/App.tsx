@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Chat from './pages/Chat';
 import Workflows from './pages/Workflows';
+import WidgetSettings from './pages/WidgetSettings';
 import Layout from './components/Layout';
 import './App.css';
 
@@ -54,6 +55,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Workflows />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/widget-settings" element={
+              <ProtectedRoute>
+                <Layout>
+                  <WidgetSettings />
                 </Layout>
               </ProtectedRoute>
             } />

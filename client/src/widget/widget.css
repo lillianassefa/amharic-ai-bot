@@ -1,0 +1,18 @@
+/* Basic styles for the widget that don't depend on global Tailwind if possible, 
+   or we can import tailwind here and let Vite bundle it. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:host {
+  all: initial; /* Reset all properties inherited from the host site */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#amharic-ai-widget-container {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  z-index: 999999;
+}
+

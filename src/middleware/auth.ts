@@ -62,11 +62,24 @@ export const authenticateApiKey = async (
     }
 
     const company = await prisma.company.findUnique({
-      where: { apiKey }
+      where: { apiKey },
+      include: { widgetSettings: true }
     });
 
     if (!company || !company.isActive) {
       return res.status(401).json({ error: 'Invalid API key' });
+    }
+
+    // Domain Whitelisting Check (only for widget requests)
+    const origin = req.headers.origin || req.headers.referer;
+    if (origin && company.widgetSettings && company.widgetSettings.allowedDomains.length > 0) {
+      const isAllowed = company.widgetSettings.allowedDomains.some(domain => 
+        origin.includes(domain)
+      );
+      if (!isAllowed) {
+        console.warn(`[Auth] Blocked request from unauthorized origin: ${origin} for company: ${company.name}`);
+        return res.status(403).json({ error: 'Origin not allowed' });
+      }
     }
 
     req.user = {

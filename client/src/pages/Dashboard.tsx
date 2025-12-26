@@ -37,12 +37,19 @@ interface Activity {
   timestamp: string;
   language?: string;
   status?: string;
+  metadata?: {
+    source?: string;
+    messageCount?: number;
+    workflowName?: string;
+    originalName?: string;
+  };
 }
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'dashboard' | 'widget'>('all');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -167,7 +174,18 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
+            <select 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value as any)}
+              className="text-xs border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="all">All Sources</option>
+              <option value="dashboard">Dashboard Only</option>
+              <option value="widget">Widget Only</option>
+            </select>
+          </div>
           
           {stats && (
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -202,8 +220,22 @@ const Dashboard: React.FC = () => {
           )}
 
           <div className="space-y-3">
-            {activities.length > 0 ? (
-              activities.map((activity) => (
+            {activities.filter(a => {
+              if (filter === 'all') return true;
+              if (a.type === 'conversation' && a.metadata?.source && (filter === 'dashboard' || filter === 'widget')) {
+                return a.metadata.source === filter;
+              }
+              return false;
+            }).length > 0 ? (
+              activities
+                .filter(a => {
+                  if (filter === 'all') return true;
+                  if (a.type === 'conversation' && a.metadata?.source && (filter === 'dashboard' || filter === 'widget')) {
+                    return a.metadata.source === filter;
+                  }
+                  return false;
+                })
+                .map((activity) => (
                 <div key={activity.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <div className="flex-shrink-0">
                     {getActivityIcon(activity.type)}
@@ -218,6 +250,15 @@ const Dashboard: React.FC = () => {
                       {activity.language && (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
                           {getLanguageLabel(activity.language)}
+                        </span>
+                      )}
+                      {activity.metadata?.source && (
+                        <span className={`px-2 py-1 rounded ${
+                          activity.metadata.source === 'widget' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {activity.metadata.source === 'widget' ? 'Widget' : 'Dashboard'}
                         </span>
                       )}
                     </div>

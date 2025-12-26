@@ -9,7 +9,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  User
+  User,
+  Bot
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -27,6 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'AI Chat', href: '/chat', icon: MessageSquare },
     { name: 'Workflows', href: '/workflows', icon: Settings },
+    { name: 'Widget Settings', href: '/widget-settings', icon: Bot },
   ];
 
   const isActive = (path: string) => {

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -12,9 +13,10 @@ import documentRoutes from './routes/documents';
 import aiRoutes from './routes/ai';
 import workflowRoutes from './routes/workflows';
 import dashboardRoutes from './routes/dashboard';
+import widgetRoutes from './routes/widget';
 
 // Import middleware
-import { authenticateToken } from './middleware/auth';
+import { authenticateToken, authenticateApiKey } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
@@ -26,7 +28,7 @@ const server = createServer(app);
 
 // CORS configuration - more permissive for development
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin: function (origin: any, callback: any) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
@@ -41,12 +43,15 @@ const corsOptions = {
     if (origin === CLIENT_URL) {
       return callback(null, true);
     }
-    
-    callback(new Error('Not allowed by CORS'));
+
+    // For the widget API, we allow the origin but our authenticateApiKey middleware 
+    // will perform the actual domain whitelisting check. 
+    // This allows the browser to at least make the request.
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-api-key'],
   exposedHeaders: ['Authorization'],
   preflightContinue: false,
   optionsSuccessStatus: 204
@@ -101,6 +106,15 @@ app.options('*', (req, res) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Rate limiting for public widget API
+const widgetRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
 // Create uploads directory
 import fs from 'fs';
 const uploadsDir = process.env.UPLOAD_PATH || './uploads';
@@ -139,6 +153,26 @@ app.use('/api/documents', authenticateToken, documentRoutes);
 app.use('/api/ai', authenticateToken, aiRoutes);
 app.use('/api/workflows', authenticateToken, workflowRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/widget', widgetRateLimiter, authenticateApiKey, widgetRoutes);
+
+// Serve widget bundle and assets as static files
+app.use('/assets', express.static(path.join(__dirname, '../client/dist/assets')));
+
+app.get('/widget.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/widget.js'), (err) => {
+    if (err) {
+      res.status(404).send('Widget bundle not found. Please run a build first.');
+    }
+  });
+});
+
+app.get('/widget.css', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/widget.css'), (err) => {
+    if (err) {
+      res.status(404).send('Widget styles not found. Please run a build first.');
+    }
+  });
+});
 
 // Serve React app in production
 if (process.env.NODE_ENV === 'production') {

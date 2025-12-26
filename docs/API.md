@@ -195,6 +195,32 @@ Exports data by type.
   - `type` (`documents` | `conversations` | `workflows`, required)
   - `format` (`json` | `csv`, default `json`; CSV supported for `documents`)
 
+## Widget API (`/api/widget`)
+
+All widget endpoints require an API key and are subject to rate limiting and domain whitelisting.
+
+- Header: `x-api-key: <api_key>`
+
+### GET `/api/widget/config`
+
+Fetch the widget visual and behavioral settings.
+
+### POST `/api/widget/conversations`
+
+Start a new conversation or resume an existing one for a visitor.
+
+- Body:
+  - `visitorId` (string, required)
+  - `language` (`auto` | `am` | `en`, optional)
+
+### POST `/api/widget/conversations/:id/messages`
+
+Send a message from the visitor and get an AI response.
+
+- Body:
+  - `content` (string, required)
+  - `visitorId` (string, required)
+
 ## Realtime (Socket.IO)
 
 Server uses Socket.IO and expects clients to join a room with the company ID:

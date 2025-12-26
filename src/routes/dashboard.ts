@@ -124,6 +124,7 @@ router.get('/activities', async (req: AuthRequest, res: Response) => {
         id: true,
         title: true,
         language: true,
+        source: true,
         createdAt: true,
         _count: {
           select: { messages: true }
@@ -165,7 +166,10 @@ router.get('/activities', async (req: AuthRequest, res: Response) => {
         title: conv.title || 'New Conversation',
         language: conv.language,
         timestamp: conv.createdAt,
-        metadata: { messageCount: conv._count.messages }
+        metadata: { 
+          messageCount: conv._count.messages,
+          source: conv.source 
+        }
       })),
       ...recentExecutions.map(exec => ({
         id: exec.id,
@@ -348,4 +352,72 @@ router.get('/export', async (req: AuthRequest, res: Response) => {
   }
 });
 
-export default router; 
+// Get widget settings
+router.get('/widget-settings', async (req: AuthRequest, res: Response) => {
+  try {
+    const companyId = req.user!.companyId;
+    let settings = await prisma.widgetSettings.findUnique({
+      where: { companyId }
+    });
+
+    if (!settings) {
+      settings = await prisma.widgetSettings.create({
+        data: { companyId }
+      });
+    }
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Get widget settings error:', error);
+    res.status(500).json({ error: 'Failed to retrieve widget settings' });
+  }
+});
+
+// Update widget settings
+router.put('/widget-settings', async (req: AuthRequest, res: Response) => {
+  try {
+    const companyId = req.user!.companyId;
+    const { 
+      primaryColor, 
+      welcomeMessage, 
+      welcomeMessageAm, 
+      botName, 
+      botNameAm, 
+      logoUrl, 
+      allowedDomains, 
+      isEnabled 
+    } = req.body;
+
+    const settings = await prisma.widgetSettings.upsert({
+      where: { companyId },
+      update: {
+        primaryColor,
+        welcomeMessage,
+        welcomeMessageAm,
+        botName,
+        botNameAm,
+        logoUrl,
+        allowedDomains,
+        isEnabled
+      },
+      create: {
+        companyId,
+        primaryColor,
+        welcomeMessage,
+        welcomeMessageAm,
+        botName,
+        botNameAm,
+        logoUrl,
+        allowedDomains,
+        isEnabled
+      }
+    });
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Update widget settings error:', error);
+    res.status(500).json({ error: 'Failed to update widget settings' });
+  }
+});
+
+export default router;

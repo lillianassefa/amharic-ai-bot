@@ -19,8 +19,27 @@ model Company {
   conversations Conversation[]
   documents     Document[]
   workflows     Workflow[]
+  widgetSettings WidgetSettings?
 
   @@map("companies")
+}
+
+model WidgetSettings {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  primaryColor   String   @default("#3B82F6")
+  welcomeMessage String   @default("How can I help you today?")
+  welcomeMessageAm String @default("ዛሬ እንዴት ልረዳዎ እችላለሁ?")
+  botName        String   @default("AI Assistant")
+  botNameAm      String   @default("AI ረዳት")
+  logoUrl        String?
+  allowedDomains String[] @default([])
+  isEnabled      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("widget_settings")
 }
 
 model Document {
@@ -43,6 +62,8 @@ model Conversation {
   id        String    @id @default(cuid())
   title     String?
   language  String    @default("auto")
+  source    String    @default("dashboard")
+  visitorId String?
   companyId String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
