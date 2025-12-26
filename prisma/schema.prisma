@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  password      String
+  apiKey        String         @unique @default(cuid())
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+  documents     Document[]
+  workflows     Workflow[]
+
+  @@map("companies")
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  fileType     String
+  fileSize     Int
+  content      String?
+  language     String?
+  companyId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  title     String?
+  language  String    @default("auto")
+  companyId String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  role           String
+  language       String?
+  conversationId String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Workflow {
+  id            String              @id @default(cuid())
+  name          String
+  description   String?
+  n8nWorkflowId String?
+  isActive      Boolean             @default(true)
+  config        Json?
+  companyId     String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  executions    WorkflowExecution[]
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("workflows")
+}
+
+model WorkflowExecution {
+  id          String    @id @default(cuid())
+  workflowId  String
+  status      String
+  input       Json?
+  output      Json?
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_executions")
+}
