@@ -15,7 +15,7 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "client"],
+  "exclude": ["node_modules", "dist", "client", "src/**/*.test.ts"],
   "ts-node": {
     "transpileOnly": true,
     "compilerOptions": {

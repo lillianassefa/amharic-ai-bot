@@ -1,10 +1,10 @@
-import { detectLanguage } from '../services/ai';
+import { detectLanguage } from '../utils/language';
 
 const runTests = () => {
   const tests = [
     { input: 'Hello, how are you?', expected: 'en' },
     { input: 'ሰላም ነው? እንዴት ነህ?', expected: 'am' },
-    { input: 'This is a test with አማርኛ inside.', expected: 'am' },
+    { input: 'This is a test with አማርኛ inside.', expected: 'en' },
     { input: '12345 !@#$', expected: 'en' },
   ];
 

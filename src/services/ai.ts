@@ -1,16 +1,11 @@
 import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
+import { resolveLanguage } from '../utils/language';
 
 const prisma = new PrismaClient();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
-
-// Language detection helper
-export const detectLanguage = (text: string): string => {
-  const amharicPattern = /[\u1200-\u137F]/;
-  return amharicPattern.test(text) ? 'am' : 'en';
-};
 
 // System prompts for different languages
 export const systemPrompts = {
@@ -34,8 +29,7 @@ export const getAIResponse = async (params: {
 }) => {
   const { companyId, conversationId, content, language, io } = params;
 
-  // Detect language if not provided
-  const detectedLanguage = language || detectLanguage(content);
+  const detectedLanguage = resolveLanguage(language, content);
   
   // Save user message
   const userMessage = await prisma.message.create({
@@ -56,13 +50,7 @@ export const getAIResponse = async (params: {
 
   // Get relevant documents for context
   const documents = await prisma.document.findMany({
-    where: {
-      companyId,
-      OR: [
-        { language: detectedLanguage },
-        { language: 'auto' }
-      ]
-    },
+    where: { companyId },
     select: {
       originalName: true,
       content: true

@@ -6,6 +6,7 @@ import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import { resolveLanguage } from '../utils/language';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -44,18 +45,6 @@ const upload = multer({
   }
 });
 
-// Language detection helper
-const detectLanguage = (text: string): string => {
-  // Simple Amharic character detection
-  const amharicPattern = /[\u1200-\u137F]/;
-  const hasAmharic = amharicPattern.test(text);
-  
-  if (hasAmharic) {
-    return 'am'; // Amharic
-  }
-  return 'en'; // Default to English
-};
-
 // Extract text from different file types
 const extractTextFromFile = async (filePath: string, mimetype: string): Promise<string> => {
   try {
@@ -85,7 +74,7 @@ router.post('/upload', upload.single('document'), async (req: AuthRequest, res: 
 
     // Extract text content
     const content = await extractTextFromFile(req.file.path, req.file.mimetype);
-    const language = req.body.language || detectLanguage(content);
+    const language = resolveLanguage(req.body.language, content);
 
     // Save document info to database
     const document = await prisma.document.create({

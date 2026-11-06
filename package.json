@@ -11,6 +11,7 @@
     "build:server": "tsc",
     "build:client": "npm --prefix client run build",
     "start": "node dist/server.js",
+    "test": "node --require ts-node/register --test src/utils/*.test.ts",
     "install:all": "npm install && cd client && npm install"
   },
   "dependencies": {
